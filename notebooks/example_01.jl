@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.1
+# v0.14.2
 
 using Markdown
 using InteractiveUtils
@@ -10,8 +10,26 @@ using Pkg, DrWatson
 # ╔═╡ 286f9602-6773-4fe0-ac75-36b19d8333f0
 begin
 	@quickactivate "SymbolicsNMFE"
-	using Symbolics
+	using Symbolics, SymbolicUtils, Latexify, LaTeXStrings, ModelingToolkit
 end
+
+# ╔═╡ 987efa36-893d-45cc-88b5-234b80071ab2
+using NamedTupleTools
+
+# ╔═╡ 1f959707-6342-4f90-bdf8-e44643f2b320
+md"
+!!! note
+	Helper functions to display LaTeX
+"
+
+# ╔═╡ 2b7a2fd8-9b61-4fe9-ac63-189b01417056
+LATEXIFY(x) = md"$(latexify(x))"
+
+# ╔═╡ db5e7e9a-15b0-4a96-9686-d0691eac84bd
+LATEXIFY(s::AbstractString, x) = md"$(s) $(latexify(x))"
+
+# ╔═╡ 2209f929-a859-4fd6-bc6a-6d1249ce8642
+L = LATEXIFY
 
 # ╔═╡ 278c20ed-066d-436d-836a-10c34661c3eb
 md"
@@ -19,8 +37,8 @@ md"
 	Output from `versioninfo()` is shown in terminal.
 "
 
-# ╔═╡ c656232f-745c-47b9-8abd-d10319082900
-Text(sprint(show, "text/plain", versioninfo()));
+# ╔═╡ 8e5d2539-81c6-4396-81ff-a6908b582096
+versioninfo()
 
 # ╔═╡ f419c6fc-7b77-4ec6-80c0-8672b064c7f4
 begin
@@ -28,43 +46,53 @@ begin
 	D = Differential(t)
 end;
 
+# ╔═╡ 0eb5fb16-765e-4bfc-9300-e7a867037eb5
+begin
+	a = [x^2+y 0 2x;
+		 0 0 2y;
+		 y^2 + x 0 0]
+	LATEXIFY("a", a)
+end
+
+# ╔═╡ 62588b63-213e-44b4-b3a0-eec4b1c930c3
+L("a", a)
+
 # ╔═╡ 2292c3af-6ca4-415f-b637-610dbbe42cab
 begin
-	z = t + t^2
-	D(z) # symbolic representation of derivative(t + t^2, t)
-	expand_derivatives(D(z)) # 1 + 2t
+	z = t*t^4 + 3t^5
+	D(z) # symbolic representation of derivative(t*t^4 + 15t^4, t)
+	expand_derivatives(D(z)) # 10t^4
 end
+
+# ╔═╡ c899af71-1ae1-4b17-ba3a-d3ba989e49b6
+z
+
+# ╔═╡ 5e617b9a-eedc-4a0a-82df-57dad2b91b3e
+md"b0 = $(latexify(z))"
 
 # ╔═╡ 340e4b31-4de7-40e3-816e-6e705df711de
 begin
 	b0 = Symbolics.jacobian([x + x*y, x^2 + y],[x, y])
-	Text(sprint(show, "text/plain", b0))
+	md"b0 = $(latexify(b0))"
 end
 
 # ╔═╡ 0d87482f-7a1a-495f-94fb-a6a625534801
 begin
-	#2×2 Matrix{Num}:
-	# 1 + y  x
-	#    2x  1
 	b = [
 		t^2 + t + t^2  2t + 4t
 		x + y + y + 2t  x^2 - x^2 + y^2
 	]
-
 	b1 = simplify.(b)
-	
 	Text(sprint(show, "text/plain", b1))
 end
 
+# ╔═╡ ede004a7-e53c-4102-a4dd-6529dcd8f855
+md"b1 = $(latexify(b1))"
+
 # ╔═╡ a9376da1-b58a-4134-ab77-3db8ef42695e
 begin
-	#2×2 Matrix{Num}:
-	#   t + 2(t^2)   6t
-	# x + 2(t + y)  y^2
-
 	b2 = simplify.(substitute.(b, (Dict(x => y^2),)))
-	
-	Text(sprint(show, "text/plain", b2))
+	md"b2 = $(latexify(b2))"
 end
 
 # ╔═╡ c0df2952-f0f0-414a-92a3-3b1c6c622206
@@ -74,8 +102,11 @@ begin
 	# 16.0   9.0
 
 	b3 = substitute.(b, (Dict(x => 2.0, y => 3.0, t => 4.0),))
-	Text(sprint(show, "text/plain", b3))
+	LATEXIFY("b3", b3)
 end
+
+# ╔═╡ e4998080-32ef-4095-bad0-92cc27bf5170
+LATEXIFY(b3)
 
 # ╔═╡ 9b7a5d1d-1a3e-40bc-86c2-6cf7cedc57a0
 begin
@@ -103,17 +134,51 @@ begin
 	Text(sprint(show, "text/plain", b5))
 end
 
+# ╔═╡ 1e48e58c-509b-42fd-b7e8-a943ff48d7f9
+struct MyStruct
+           tally::Int
+           team::String
+       end
+
+# ╔═╡ 170bf340-b629-4cce-831f-570b1f7f4494
+mystruct = MyStruct(5, "hometeam")
+
+# ╔═╡ 7f3c0230-0619-498f-85de-9ab5982f72c7
+mynamedtuple = ntfromstruct(mystruct)
+
+# ╔═╡ 93ff9a77-8419-465a-8f7b-b565179364bf
+ntstruct = structfromnt(MyStruct, mynamedtuple)
+
+# ╔═╡ 2aeebb4c-379e-4876-9d1e-99e7bc8622f2
+mystruct == ntstruct
+
 # ╔═╡ Cell order:
 # ╠═56a604d4-ec32-404f-91bc-86fa24b9bb47
 # ╠═286f9602-6773-4fe0-ac75-36b19d8333f0
+# ╟─1f959707-6342-4f90-bdf8-e44643f2b320
+# ╠═2b7a2fd8-9b61-4fe9-ac63-189b01417056
+# ╠═db5e7e9a-15b0-4a96-9686-d0691eac84bd
+# ╠═2209f929-a859-4fd6-bc6a-6d1249ce8642
 # ╟─278c20ed-066d-436d-836a-10c34661c3eb
-# ╠═c656232f-745c-47b9-8abd-d10319082900
+# ╠═8e5d2539-81c6-4396-81ff-a6908b582096
 # ╠═f419c6fc-7b77-4ec6-80c0-8672b064c7f4
+# ╠═0eb5fb16-765e-4bfc-9300-e7a867037eb5
+# ╠═62588b63-213e-44b4-b3a0-eec4b1c930c3
 # ╠═2292c3af-6ca4-415f-b637-610dbbe42cab
+# ╠═c899af71-1ae1-4b17-ba3a-d3ba989e49b6
+# ╠═5e617b9a-eedc-4a0a-82df-57dad2b91b3e
 # ╠═340e4b31-4de7-40e3-816e-6e705df711de
 # ╠═0d87482f-7a1a-495f-94fb-a6a625534801
+# ╠═ede004a7-e53c-4102-a4dd-6529dcd8f855
 # ╠═a9376da1-b58a-4134-ab77-3db8ef42695e
+# ╠═e4998080-32ef-4095-bad0-92cc27bf5170
 # ╠═c0df2952-f0f0-414a-92a3-3b1c6c622206
 # ╠═9b7a5d1d-1a3e-40bc-86c2-6cf7cedc57a0
 # ╟─65237ef6-7c92-4687-96cb-766016f5ed73
 # ╠═412ef249-a7ac-42ef-b30e-4e77cddcd9a6
+# ╠═987efa36-893d-45cc-88b5-234b80071ab2
+# ╠═1e48e58c-509b-42fd-b7e8-a943ff48d7f9
+# ╠═170bf340-b629-4cce-831f-570b1f7f4494
+# ╠═7f3c0230-0619-498f-85de-9ab5982f72c7
+# ╠═93ff9a77-8419-465a-8f7b-b565179364bf
+# ╠═2aeebb4c-379e-4876-9d1e-99e7bc8622f2
